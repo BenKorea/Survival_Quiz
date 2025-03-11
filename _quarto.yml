@@ -3,11 +3,15 @@ project:
   output-dir: docs
 
 website:
-  title: "R441-Survival_Exercise"
+  title: "R442-Survival_Quiz"
   navbar:
     left:
       - href: index.qmd
         text: Home
+      - href: exwecise1.qmd
+        text: exercise1
+      - href: answer.qmd
+        text: quiz_answer
 
 format:
   html:

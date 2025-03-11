@@ -20,7 +20,6 @@ editor: visual
 
 ```{r rdata_load}
 
-library(moonBook)
 library(magrittr)
 
 load("S.rdata")
@@ -29,6 +28,9 @@ str(df)
 ```
 
 ```{r mytable}
+
+library(moonBook)
+
 mytable(death~.,data=df)
 ```
 
@@ -40,11 +42,17 @@ optype label 수정
 
 Differentiation missing value 수정
 
-```{r table}
+```{r df_table}
 
 table(df[,c("Cell_type","Patho")])
+```
+
+```{r cell_type_factoprization}
 df$Cell_type <- factor(df$Cell_type,labels = c("ADC","SQC","BAC","Others"))
 table(df[,c("Cell_type","Patho")])
+```
+
+
 df$optype <- factor(df$optype, labels = c("Lobectomy", "S_lobectomy", "Pneumonectomy"))
 table(df$Differentiation)
 df[df$Differentiation=="#VALUE!","Differentiation"] <-"n"
