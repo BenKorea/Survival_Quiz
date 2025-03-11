@@ -18,12 +18,17 @@ editor: visual
 
 ## Rdata 읽기
 
-```{r}
-load("S.rdata")
-df<-S
+```{r rdata_load}
+
 library(moonBook)
 library(magrittr)
+
+load("S.rdata")
+df<-S
 str(df)
+```
+
+```{r mytable}
 mytable(death~.,data=df)
 ```
 
@@ -35,7 +40,8 @@ optype label 수정
 
 Differentiation missing value 수정
 
-```{r}
+```{r table}
+
 table(df[,c("Cell_type","Patho")])
 df$Cell_type <- factor(df$Cell_type,labels = c("ADC","SQC","BAC","Others"))
 table(df[,c("Cell_type","Patho")])
@@ -47,7 +53,7 @@ table(df$Differentiation)
 
 CT size, CT solid size, Pathology size 의 관계 확인
 
-```{r}
+```{r plot_df}
 plot(df[,c("Ctsolid_size","CT_size")])
 plot(df[,c("CT_size","path_size")])
 ```
