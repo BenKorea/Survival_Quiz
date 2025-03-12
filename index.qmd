@@ -1,0 +1,219 @@
+---
+title: "Quiz_Answer"
+description: "2024-12-26 이해원회장님의 퀴즈에 대한 답"
+author: "Benjamin"
+date: "2024-12-26"
+date-modified: "2025-03-10"
+number-sections: true
+---
+
+# Quiz 데이터 주무르기 + 생존분석
+
+## Dataframe Index
+하는 방법
+
+### dataframe load
+하여 주십시오.
+
+```{r dataframe_load}
+
+library(magrittr)
+library(tidyverse)
+library(stringr)
+library(reshape2)
+library(gt)
+
+load("S.rdata")
+df<-S
+```
+
+
+### 개인정보제거
+df에서 생존분석과 상관없는 개인정보를 제거하려고 합니다. 컬럼변수명들을 다음과 같이 출력하려면 어떻게 하면 될까요? (colnames, t 함수 참고)
+
+```
+      [,1]             
+ [1,] "hospital"       
+ [2,] "ChartNo"        
+ [3,] "Ca_Dx_date"     
+ [4,] "Sex"            
+ [5,] "OpDate"         
+ [6,] "OpAge"          
+ [7,] "Birthdate"      
+ [8,] "NeoAdj"         
+ [9,] "optype"         
+[10,] "VATS"           
+[11,] "Ctsolid_size"   
+[12,] "CT_size"        
+[13,] "path_size"      
+[14,] "Cell_type"      
+[15,] "Patho"          
+[16,] "survival"       
+[17,] "rec_free"       
+[18,] "Recur_date"     
+[19,] "recurrence"     
+[20,] "Op_mortality"   
+[21,] "death"          
+[22,] "Death_date"     
+[23,] "last_fu"        
+[24,] "AJCC7"          
+[25,] "Tstage"         
+[26,] "Nstage"         
+[27,] "Mstage"         
+[28,] "Differentiation"
+[29,] "Adj_RT"         
+[30,] "adj_CT"         
+[31,] "survival.60"    
+[32,] "type"           
+[33,] "stage"  
+```
+
+
+### 개인정보제거 답안
+
+1.  아래와 같이 t() 함수를 연속해서 사용
+
+```{r answer_1.1.2_t}
+colnames(df) %>% t %>% t
+```
+
+-   풀이과정: t()함수는 전치(Transpose)를 수행하나 벡터가 입력되면 1xn 행렬로 변환되어 출력되므로 다시 t()함수를 사용하여 nx1 행렬로 변환하여 출력
+
+2.  아래와 같이 dim() 함수를 사용
+
+```{r answer_1.1.2_dim}
+
+colnames_vec <- colnames(df)
+
+# 메모리 주소 추적 시작
+# tracemem(colnames_vec)
+
+dim(colnames_vec) <- c(length(colnames_vec), 1)  # 벡터를 5행 1열의 행렬로 변환
+
+# 메모리 주소 추적 시작
+# tracemem(colnames_vec)
+print(colnames_vec)
+# untracemem(colnames_vec)
+```
+
+-   풀이과정:
+    -   dim() 함수: 객체의 차원을 조회하거나 설정하는 함수
+    -   벡터를 n행 1열 행렬로 변환: dim(vec) \<- c(length(vec), 1)을 사용하여 벡터의 차원을 변경
+    -   length() 함수: 벡터의 요소 개수를 반환하여 행 개수로 사용
+    -   R은 Copy-on-modify (수정 시 복사) 방식으로 동작하지만,
+    -   dim()은 객체의 메모리 주소를 유지한 채 차원 정보만 변경하기 때문에 불필요한 복사가 발생하지 않음 -결과적으로 실행 속도가 빠르고 메모리 사용량이 최소화됨
+
+### 개인정보제거2
+df에서 다음의 컬럼들을 제거하려고 합니다.
+개인정보관련 컬럼들 
+hospital, ChartNo, survival.60, last_fu, AJCC7 
+각자 편한 방법으로 제거하여 주십시오. 
+제거한 다음에 다음과 같은 결과를 내주십시오. 
+
+```
+ [1] "Ca_Dx_date"      "Sex"             "OpDate"          "OpAge"          
+ [5] "Birthdate"       "NeoAdj"          "optype"          "VATS"           
+ [9] "Ctsolid_size"    "CT_size"         "path_size"       "Cell_type"      
+[13] "Patho"           "survival"        "rec_free"        "Recur_date"     
+[17] "recurrence"      "Op_mortality"    "death"           "Death_date"     
+[21] "Tstage"          "Nstage"          "Mstage"          "Differentiation"
+[25] "Adj_RT"          "adj_CT"          "type"            "stage"
+```
+
+
+### 개인정보제거2 답안
+
+```{r answer_1.1.3_1}
+library(data.table)
+
+df <- as.data.table(df)
+df[, c("hospital", "ChartNo", "survival.60", "last_fu", "AJCC7") := NULL]
+
+colnames(df)
+
+
+```
+
+-   풀이과정:
+    -   data.table: 불필요한 복사가 적게 발생하는 패키지로 데이터프레임을 효율적으로 다룰 수 있음
+    -   := 연산자: 데이터테이블의 컬럼을 추가하거나 수정할 때 사용
+    
+
+### 특정컬럼제거
+이번에는 다음의 컬럼들을 제거하려고 합니다. 
+Ca_Dx_date, OpDate, Birthdate, Death_date 
+colnames(df) 에서 date 또는 Date라는 이름을 가진 변수를 골라서 제거하는 방법으로 컬럼들을 제거하여 주십시오. (regxepr 함수 참고)
+
+```
+ [1] "Sex"             "OpAge"           "NeoAdj"          "optype"         
+ [5] "VATS"            "Ctsolid_size"    "CT_size"         "path_size"      
+ [9] "Cell_type"       "Patho"           "survival"        "rec_free"       
+[13] "recurrence"      "Op_mortality"    "death"           "Tstage"         
+[17] "Nstage"          "Mstage"          "Differentiation" "Adj_RT"         
+[21] "adj_CT"          "type"            "stage"  
+```
+
+### 특정컬럼제거 답안
+
+```{r answer_1.1.3_2}
+df <- as.data.table(df)
+cols_to_remove <- names(df)[grepl("date|Date", names(df))]
+df[, (cols_to_remove) := NULL]
+
+colnames(df)
+```
+
+
+## 생존분석
+
+### 데이터 준비 
+
+```{r data_prep}
+
+library(survival)
+library(moonBook)
+
+data(cancer)  ## survival package내에 있는 각종 암관련 built in 데이터
+rotterdam %>% str
+
+```
+
+### psm모델 준비
+rotterdam 데이터를 살펴보면 age, meno, size, grade, nodes, pgr, er, hormon, chemo 등의 변수가 생존에 영향을 미칠 수 있는 변수로 추정됩니다. 이들 변수들이 생존기간 (dtime, death)에 미치는 모델을 만들어 주십시오.
+psm 모델을 만들기 위해서는 비모수 변수를 factor로 바꿔야 합니다. rotterdam 데이터를 rtd.df 라는 데이터 프레임으로 옮기고 자료구조를 psm 모델에 맞게 변형해 주세요. factor로 변형할 필요가 있는 변수들이 있는지 다음과 같은 방법으로 확인하면 됩니다.
+
+```{r psm_model_prep}
+
+rtd.df <- rotterdam
+
+hline <- function(x){
+  paste0("\n", paste0(rep("-",x),collapse = ""),"\n",collapse = "")
+}
+
+for (i in 1:length(rtd.df)) {
+  colnames(rtd.df)[i] %>% cat
+  "\n" %>% cat
+  temp <- rtd.df[,i]
+  temp %>% unique %>% length %>%
+     paste(.," cases \n") %>% cat  ### unique한 값이 몇개인지
+  temp %>% summary %>% print          ### 연속변수인지 요약
+  if(length(unique(temp))<4 ){    ### unique value가 4개 미만이면 factor
+    temp %>% table %>% print
+    if(sum(unique(temp)%in% 0:1)==2){   ### unique value가 0,1 이면
+      rtd.df[,i] = factor(temp, labels = c("No","Yes"))  ### No, Yes 로 자동변환
+    } else{
+      rtd.df[,i] = factor(temp)      #### 0,1 이 아닌 경우에는 그냥 factor로
+    }
+  }
+  hline(52) %>% cat
+}
+```
+
+```{r rtd_df_structure}
+rtd.df %>% str
+```
+Surv 객체 만들기
+
+
+
+
