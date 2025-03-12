@@ -180,7 +180,7 @@ rotterdam %>% str
 
 ### psm모델 준비
 rotterdam 데이터를 살펴보면 age, meno, size, grade, nodes, pgr, er, hormon, chemo 등의 변수가 생존에 영향을 미칠 수 있는 변수로 추정됩니다. 이들 변수들이 생존기간 (dtime, death)에 미치는 모델을 만들어 주십시오.
-psm 모델을 만들기 위해서는 비모수 변수를 factor로 바꿔야 합니다. rotterdam 데이터를 rtd.df 라는 데이터 프레임으로 옮기고 자료구조를 psm 모델에 맞게 변형해 주세요. factor로 변형할 필요가 있는 변수들이 있는지 다음과 같은 방법으로 확인하면 됩니다.
+**psm 모델을 만들기 위해서는 비모수 변수를 factor로 바꿔야 합니다**. rotterdam 데이터를 rtd.df 라는 데이터 프레임으로 옮기고 자료구조를 psm 모델에 맞게 변형해 주세요. factor로 변형할 필요가 있는 변수들이 있는지 다음과 같은 방법으로 확인하면 됩니다.
 
 ```{r psm_model_prep}
 
