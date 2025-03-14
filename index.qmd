@@ -214,19 +214,14 @@ rtd.df %>% str
 
 Surv 함수로 survival 객체를 만들어 rtd.S에 주세요. rtd.S의 생존곡선을 그려주세요.
 
-```
+```         
 years <- dtime/365.2422
 units(years) <- "Year"
 ```
 
 ![](images/clipboard-1359332256.png)
 
-Surv function
-Surv(time, time2, event, …)
-time : right censored follow up time
-event : death =1, alive=0 -> 주의 ! No=1, Yes=2 이렇게 factor로 되어 있는 경우에는 event = death 같은 방법으로 assign 하면 1=death, 2=left censored로 오인됨.
-이걸 해결하려면 death==“Yes” 값으로 지정하면 됩니다.
-rms package 사용시에는 미리 attach를 해줘야 합니다.
+Surv function Surv(time, time2, event, …) time : right censored follow up time event : death =1, alive=0 -\> 주의 ! No=1, Yes=2 이렇게 factor로 되어 있는 경우에는 event = death 같은 방법으로 assign 하면 1=death, 2=left censored로 오인됨. 이걸 해결하려면 death==“Yes” 값으로 지정하면 됩니다. rms package 사용시에는 미리 attach를 해줘야 합니다.
 
 ### rtd.S 생존곡선 답안
 
@@ -236,8 +231,201 @@ attach(rtd.df)
 years <- dtime/365.2422
 # units(years) <- "Year"
 rtd.S <- Surv(years, death=="Yes")
-detach(rtd.df)
+
 plot(rtd.S)
 ```
+
 ### psm fit 모델 만들기
+
 모델을 만들기 전에 datadist 함수와 datadist option을 지정해 주세요
+
+```{r datadist}
+
+library(rms)
+
+dd <- datadist(age, meno, size, grade, nodes, pgr, er, hormon, chemo)
+dd
+options(datadist='dd')
+options(na.action="na.delete")
+```
+
+age,meno,size,grade,nodes,pgr,er,hormon,chemo 변수들을 이용한 psm model을 만들어 주세요
+rtdfit.psm 이라는 변수에 모델을 넣고 anova plot을 그려 주세요
+
+```{r psm}
+
+rtdfit.psm <- psm(rtd.S~age+ meno+ size+ grade+ nodes+ pgr+ er+ hormon+ chemo)
+rtdfit.psm
+anova(rtdfit.psm)
+plot(anova(rtdfit.psm))
+```
+### 연속변수들 변형
+연속변수들에는 rcs(x,5) 와 같은 transform 함수를 적용하여 psm model 만들어서
+rtdfit.psm2 라는 변수에 모델을 넣고 anova plot을 그려 주세요
+
+### 연속변수들 변형 - 답
+
+
+```{r psm2}
+
+rtdfit.psm2 <- psm(rtd.S ~ rcs(age,5) + meno + size + grade + rcs(nodes,5) + 
+                     rcs(pgr,5) + rcs(er,5) + hormon + chemo, 
+                   data = rtd.df, dist = "weibull", x=TRUE, y=TRUE)
+rtdfit.psm2
+anova(rtdfit.psm2)
+plot(anova(rtdfit.psm2))
+```
+### forest plot
+위의 모델에 대한 forest plot을 그려 주세요
+rms package의 psm class는 ormPlot의 forestplot 함수로만 그릴 수 있습니다.
+
+### forest plot - 답
+
+```{r forest_plot}
+
+library(ormPlot)
+
+forestplot(summary(rtdfit.psm2)) 
+```
+### validation
+validate를 해주세요
+rtdfit.psm2 모델에 대해서 bootstrap method로 200번 반복하여 검증해 주세요
+validate 함수 결과를 rtdfpsm.val에 넣고 결과값을 보여주세요
+
+
+### validation - 답
+
+
+```{r validation}
+
+rtdfpsm.val <- validate(rtdfit.psm2, method = "boot", B=200)
+rtdfpsm.val
+```
+### C-index
+C-index를 구해주세요
+corrected $D_x_y$ 를 이용하여 계산해 주세요
+
+### C-index - 답
+
+```{r fpsm}
+rtdfpsm.val[1,5]/2 +0.5  ## corrected index of Dxy
+```
+
+### Nomogram 
+Nomogram 그리기
+rtdfit.psm2 모델에 대해서 nomogram을 구해주세요
+
+
+### Nomogram - 답
+
+```{r nomogram}
+#| fig-width: 9
+#| fig-height: 12
+nomogram(rtdfit.psm2, fun = function(x){1/(1+exp(-x))})
+plot(nomogram(rtdfit.psm2))
+```
+
+### Odds ratio 그래프
+ggplot 함수를 이용해서 rtdfit.psm2 각 변수별 Odds ratio 그래프를 그려주세요
+
+### Odds ratio 그래프 - 답
+
+```{r sepdiscrete}
+#| fig-width: 8
+#| fig-height: 8
+a<- anova(rtdfit.psm2)
+ggplot(Predict(rtdfit.psm2, ref.zero = T), vnames = "names",
+       sepdiscrete = "vertical", anova = a)
+```
+### predict 그래프
+rtdfit.psm2 에서 nodes에 대한 predict 그래프를 그려주세요
+
+### predict 그래프 - 답
+```{r predict}
+#| fig-width: 6
+#| fig-height: 6
+
+plot(Predict(rtdfit.psm2,nodes))
+
+```
+### survival curve
+단일 변수 size에 대한 psm 모델을 만들어서 생존곡선을 그려 주세요
+
+### survival curve - 답
+
+```{r size}
+#| fig-width: 6
+#| fig-height: 6
+fit.t <- psm(rtd.S~size)
+survplot(fit.t,  col=rainbow(10)[1:6])
+```
+
+## 두개의 변수들의 상관관계 살펴보기
+다음과 같은 crosstab table을 만들어 보세요 
+
+## 상관관계 - 답
+
+
+```{r dcast}
+df<-as.data.table(df)
+# reshape2::dcast(df, df$Nsatge~df$Tstage) 
+df %>% dcast(Nstage~Tstage)
+```
+
+## Factor 다루기
+
+### Factor 만들기
+factor 함수를 이용하여 Tstage, Nstage, Mstage를 factor 변수로 만들어 보시오.
+다음과 같은 결과를 만들어주세요
+
+
+### Factor 만들기 - 답
+
+```{r factor}
+
+df$Tstage <- factor(df$Tstage)
+df$Nstage <- factor(df$Nstage)
+df$Mstage <- factor(df$Mstage)
+
+df$Tstage %>% table
+df$Nstage %>% table
+df$Mstage %>% table
+```
+### Factor 순서바꾸기
+위의 결과를 보면 Tstage의 level은 1a 1b 2a 2b 3 4 is의 순서입니다. 이것을 is 1a 1b 2a 2b 3 4의 순서로 바꾸시오.
+다음과 같은 결과를 만들어주세요
+
+
+### Factor 순서바꾸기 - 답
+```{r factor_order}
+df$Tstage <- factor(df$Tstage, levels = c("is", "1a", "1b", "2a", "2b", "3", "4"))
+df$Tstage %>% table
+
+```
+### Cramer’s V 분석
+두변수의 Cramer’s V 분석을 해주세요
+
+### Cramer’s V 분석 - 답
+
+```{r Cramer}
+library(vcd)
+table_data <- table(df$Tstage, df$Nstage)
+cramers_v <- assocstats(table_data)$cramer
+print(cramers_v)
+```
+
+### CT_size와 Tstage, Nstage의 ANOVA test
+
+### CT_size와 Tstage, Nstage의 ANOVA test - 답
+
+```{r anova}
+
+aov(CT_size ~ Nstage, data=df) %>% summary
+
+boxplot(CT_size ~ Tstage, data=df, col=rainbow(9))
+```
+
+
+```{r the_end}
+
+```
